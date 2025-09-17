@@ -2,13 +2,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from database import Database
 
-# --- Funções de formatação ---
+
 def formatar_cpf_cnpj(entry):
     text = entry.get().replace(".", "").replace("/", "").replace("-", "")
     text = "".join(filter(str.isdigit, text))
-    
     if len(text) > 14: text = text[:14]
-
     if len(text) <= 11:
         entry.delete(0, tk.END)
         if len(text) > 9: text = f"{text[:3]}.{text[3:6]}.{text[6:9]}-{text[9:]}"
@@ -54,9 +52,7 @@ class LoginApp(tk.Frame):
         if not login or not senha:
             messagebox.showwarning("Atenção", "Por favor, preencha todos os campos.", parent=self)
             return
-        
         tipo_usuario, user_id = self.controller.verificar_login(login, senha)
-        
         if tipo_usuario:
             self.controller.login_bem_sucedido(tipo_usuario, user_id)
         else:
@@ -66,7 +62,10 @@ class AppController(tk.Tk):
     def __init__(self, db_manager):
         super().__init__()
         self.db_manager = db_manager
+        self.withdraw()
         
+    def show_login_screen(self):
+        self.deiconify()
         self.title("Sistema de Gestão")
         self.geometry("800x600")
         self.configure(bg="#34495e")
@@ -79,25 +78,15 @@ class AppController(tk.Tk):
 
     def verificar_login(self, login, senha):
         login_limpo = "".join(filter(str.isdigit, login))
-        
         ADMIN_CNPJ = "123"
         ADMIN_PASS = "123"
-        
         if login_limpo == ADMIN_CNPJ and senha == ADMIN_PASS:
-            print("Login de Administrador bem-sucedido.")
             return 'admin', None
-
         elif len(login_limpo) == 11:
             sql = "SELECT id FROM funcionarios WHERE cpf = %s AND senha = %s AND status = 'Ativo'"
-            params = (login_limpo, senha)
-            resultado = self.db_manager.execute_query(sql, params)
-            
+            resultado = self.db_manager.execute_query(sql, (login_limpo, senha))
             if resultado:
-                funcionario_id = resultado[0][0]
-                print(f"Login de Funcionário bem-sucedido. ID: {funcionario_id}")
-                return 'funcionario', funcionario_id
-        
-        print("Falha na autenticação.")
+                return 'funcionario', resultado[0][0]
         return None, None
 
     def login_bem_sucedido(self, tipo_usuario, funcionario_id=None):
@@ -106,20 +95,39 @@ class AppController(tk.Tk):
             from views.view_menu_principal import MainMenuApp
             main_menu = MainMenuApp(self, self.db_manager)
             main_menu.grab_set()
-        
         elif tipo_usuario == 'funcionario':
-                    # A linha da messagebox foi REMOVIDA
-                    from views.view_portal_funcionario import PortalFuncionarioApp
-                    portal = PortalFuncionarioApp(self, self.db_manager, funcionario_id)
-                    portal.grab_set()
+            from views.view_portal_funcionario import PortalFuncionarioApp
+            portal = PortalFuncionarioApp(self, self.db_manager, funcionario_id)
+            portal.grab_set()
 
 if __name__ == "__main__":
+    
+    # 1. Cria a splash screen
+    splash_root = tk.Tk()
+    splash_root.title("Inicializando...")
+    splash_root.geometry("300x100")
+    splash_root.configure(bg="#34495e")
+    splash_root.eval('tk::PlaceWindow . center')
+    splash_root.overrideredirect(True)
+    
+    splash_label = tk.Label(splash_root, text="Conectando ao banco de dados...", font=("Arial", 11), bg="#34495e", fg="#ecf0f1")
+    splash_label.pack(pady=40)
+    
+    splash_root.update()
+
     db_manager = Database() 
+    
+    splash_root.destroy()
+
     if db_manager.conn is None:
-        messagebox.showerror("Erro Fatal de Conexão", "Não foi possível conectar ao banco de dados PostgreSQL.")
+        root_temp = tk.Tk()
+        root_temp.withdraw()
+        messagebox.showerror("Erro Fatal de Conexão", 
+                             "Não foi possível conectar ao banco de dados PostgreSQL.\n"
+                             "Verifique suas credenciais e se o serviço do banco está ativo.")
+        root_temp.destroy()
     else:
         app = AppController(db_manager)
+        app.show_login_screen()
         app.mainloop()
         db_manager.close_connection()
-
-        #90909090909

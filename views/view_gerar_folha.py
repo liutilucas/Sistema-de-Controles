@@ -1,10 +1,8 @@
-# Arquivo: views/view_gerar_folha.py (Com lógica de geração em massa)
-
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import date
 import calendar
-import random # Para gerar bônus de exemplo
+import random
 
 class GerarFolhaApp(tk.Toplevel):
     def __init__(self, master, db_manager):
@@ -64,7 +62,6 @@ class GerarFolhaApp(tk.Toplevel):
         self.log_text.see(tk.END)
         self.update_idletasks()
 
-    # ***** ESTA É A FUNÇÃO PRINCIPAL QUE IMPLEMENTAMOS AGORA *****
     def iniciar_geracao(self):
         mes_nome = self.combo_mes.get()
         mes_num = self.meses_map.get(mes_nome)
@@ -75,7 +72,6 @@ class GerarFolhaApp(tk.Toplevel):
             "O sistema irá ignorar funcionários que já possuam holerite para este período.", parent=self):
             return
 
-        # Desabilita o botão para evitar cliques duplos
         self.btn_gerar.config(state='disabled')
         self.log_text.config(state='normal')
         self.log_text.delete('1.0', tk.END)
@@ -83,7 +79,6 @@ class GerarFolhaApp(tk.Toplevel):
 
         self.adicionar_log(f"Iniciando geração para {mes_nome}/{ano}...")
         
-        # 1. Buscar todos os funcionários ativos
         sql_funcionarios = "SELECT id, salario FROM funcionarios WHERE status = 'Ativo' ORDER BY id"
         funcionarios = self.db_manager.execute_query(sql_funcionarios)
 
@@ -96,7 +91,6 @@ class GerarFolhaApp(tk.Toplevel):
         holerites_gerados = 0
         funcionarios_ignorados = 0
 
-        # 2. Loop para processar cada funcionário
         for func_id, salario_base in funcionarios:
             if salario_base is None or salario_base <= 0:
                 self.adicionar_log(f"-> ID {func_id}: Salário não definido. Pulando.")
@@ -105,14 +99,12 @@ class GerarFolhaApp(tk.Toplevel):
 
             self.adicionar_log(f"-> Processando funcionário ID: {func_id}...")
 
-            # 3. Verificar se o holerite já existe
             sql_check = "SELECT id FROM holerites WHERE funcionario_id = %s AND mes = %s AND ano = %s"
             if self.db_manager.execute_query(sql_check, (func_id, mes_num, ano)):
                 self.adicionar_log("   Holerite já existe. Pulando.")
                 funcionarios_ignorados += 1
                 continue
             
-            # 4. Calcular valores (lógica de exemplo)
             bonus = round(random.uniform(50, 250), 2)
             desconto_inss = round(float(salario_base) * 0.08, 2)
             desconto_vt = 60.00
@@ -121,7 +113,6 @@ class GerarFolhaApp(tk.Toplevel):
             total_descontos = desconto_inss + desconto_vt
             salario_liquido = total_proventos - total_descontos
 
-            # 5. Inserir no banco de dados
             sql_holerite = "INSERT INTO holerites (funcionario_id, mes, ano, total_proventos, total_descontos, salario_liquido) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id"
             params_holerite = (func_id, mes_num, ano, total_proventos, total_descontos, salario_liquido)
             resultado = self.db_manager.execute_modificacao(sql_holerite, params_holerite, return_id=True)
@@ -129,7 +120,6 @@ class GerarFolhaApp(tk.Toplevel):
             if resultado and isinstance(resultado, tuple):
                 novo_holerite_id = resultado[0]
                 
-                # Inserir itens
                 sql_itens = "INSERT INTO holerite_itens (holerite_id, descricao, tipo, valor) VALUES (%s, %s, %s, %s)"
                 self.db_manager.execute_modificacao(sql_itens, (novo_holerite_id, 'Salário Base', 'Provento', salario_base))
                 self.db_manager.execute_modificacao(sql_itens, (novo_holerite_id, 'Bônus', 'Provento', bonus))
@@ -141,7 +131,6 @@ class GerarFolhaApp(tk.Toplevel):
             else:
                 self.adicionar_log("   ERRO ao gerar holerite.")
 
-        # Finalização
         self.adicionar_log("\n----- PROCESSO CONCLUÍDO -----")
         self.adicionar_log(f"Holerites gerados: {holerites_gerados}")
         self.adicionar_log(f"Funcionários ignorados: {funcionarios_ignorados}")
