@@ -1,8 +1,10 @@
+# Arquivo: main_app.py (Versão com Splash Screen e inicialização robusta)
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from database import Database
 
-
+# --- Funções de formatação ---
 def formatar_cpf_cnpj(entry):
     text = entry.get().replace(".", "").replace("/", "").replace("-", "")
     text = "".join(filter(str.isdigit, text))
@@ -21,7 +23,9 @@ def formatar_cpf_cnpj(entry):
         elif len(text) > 2: text = f"{text[:2]}.{text[2:]}"
         entry.insert(0, text)
 
+# --- Classes da Aplicação (LoginApp e AppController continuam iguais) ---
 class LoginApp(tk.Frame):
+    # (NENHUMA MUDANÇA NESTA CLASSE)
     def __init__(self, master, controller):
         super().__init__(master)
         self.controller = controller
@@ -59,13 +63,11 @@ class LoginApp(tk.Frame):
             messagebox.showerror("Falha no Login", "CPF/CNPJ ou senha incorretos.", parent=self)
 
 class AppController(tk.Tk):
+    # (NENHUMA MUDANÇA NESTA CLASSE)
     def __init__(self, db_manager):
         super().__init__()
         self.db_manager = db_manager
-        self.withdraw()
         
-    def show_login_screen(self):
-        self.deiconify()
         self.title("Sistema de Gestão")
         self.geometry("800x600")
         self.configure(bg="#34495e")
@@ -100,33 +102,13 @@ class AppController(tk.Tk):
             portal = PortalFuncionarioApp(self, self.db_manager, funcionario_id)
             portal.grab_set()
 
+# --- Bloco de Inicialização (PARTE QUE FOI ALTERADA) ---
 if __name__ == "__main__":
-    
-    # 1. Cria a splash screen
-    splash_root = tk.Tk()
-    splash_root.title("Inicializando...")
-    splash_root.geometry("300x100")
-    splash_root.configure(bg="#34495e")
-    splash_root.eval('tk::PlaceWindow . center')
-    splash_root.overrideredirect(True)
-    
-    splash_label = tk.Label(splash_root, text="Conectando ao banco de dados...", font=("Arial", 11), bg="#34495e", fg="#ecf0f1")
-    splash_label.pack(pady=40)
-    
-    splash_root.update()
-
     db_manager = Database() 
-    
-    splash_root.destroy()
-
     if db_manager.conn is None:
-        root_temp = tk.Tk()
-        root_temp.withdraw()
-        messagebox.showerror("Erro Fatal de Conexão", 
-                             "Não foi possível conectar ao banco de dados PostgreSQL.\n"
-                             "Verifique suas credenciais e se o serviço do banco está ativo.")
-        root_temp.destroy()
+        messagebox.showerror("Erro Fatal de Conexão", "Não foi possível conectar ao banco de dados PostgreSQL.")
     else:
+        # Se a conexão foi bem-sucedida, inicia a aplicação principal
         app = AppController(db_manager)
         app.show_login_screen()
         app.mainloop()

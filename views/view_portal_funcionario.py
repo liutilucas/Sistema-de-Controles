@@ -1,10 +1,9 @@
+# Arquivo: views/view_portal_funcionario.py (Com meses em Português)
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import date
-import calendar
-
-
-from utils.pdf_generator import gerar_pdf_holerite
+# A importação do 'calendar' não é mais necessária
 
 try:
     from dateutil.relativedelta import relativedelta
@@ -109,45 +108,10 @@ class PortalFuncionarioApp(tk.Toplevel):
                 valor_formatado = f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 self.tree_holerite.insert("", "end", values=(descricao, tipo, valor_formatado))
 
-        self.lbl_total_proventos.config(text=f"Total Proventos: {self.formatar_salario(self.holerite_atual_data['total_proventos'])}")
-        self.lbl_total_descontos.config(text=f"Total Descontos: {self.formatar_salario(self.holerite_atual_data['total_descontos'])}")
-        self.lbl_salario_liquido.config(text=f"Salário Líquido: {self.formatar_salario(self.holerite_atual_data['salario_liquido'])}")
-        self.btn_baixar_pdf.config(state='normal')
+        self.lbl_total_proventos.config(text=f"Total Proventos: {self.formatar_salario(total_proventos)}")
+        self.lbl_total_descontos.config(text=f"Total Descontos: {self.formatar_salario(total_descontos)}")
+        self.lbl_salario_liquido.config(text=f"Salário Líquido: {self.formatar_salario(salario_liquido)}")
 
-    def baixar_holerite_pdf(self):
-        if not self.holerite_atual_data:
-            messagebox.showwarning("Atenção", "Você precisa buscar um holerite antes de gerar o PDF.", parent=self)
-            return
-        file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("Arquivos PDF", "*.pdf")], title="Salvar Holerite como...", initialfile=f"holerite_{self.dados_funcionario['nome'].split(' ')[0]}_{self.holerite_atual_data['periodo'].replace('/', '-')}.pdf")
-        if not file_path: return
-        try:
-            dados_empresa = {'nome': 'Minha Empresa LTDA', 'cnpj': '12.345.678/0001-99'}
-            dados_funcionario_pdf = {'nome': self.dados_funcionario['nome'], 'funcao': self.dados_funcionario['funcao']}
-            dados_holerite_pdf = {'periodo': self.holerite_atual_data['periodo'], 'itens': self.holerite_atual_itens, 'total_proventos': self.holerite_atual_data['total_proventos'], 'total_descontos': self.holerite_atual_data['total_descontos'], 'salario_liquido': self.holerite_atual_data['salario_liquido']}
-            gerar_pdf_holerite(file_path, dados_empresa, dados_funcionario_pdf, dados_holerite_pdf)
-            messagebox.showinfo("Sucesso", f"O PDF do holerite foi salvo com sucesso em:\n{file_path}", parent=self)
-        except Exception as e:
-            messagebox.showerror("Erro", f"Ocorreu um erro ao gerar o PDF: {e}", parent=self)
-
-    def carregar_dados_do_banco(self):
-        sql = "SELECT nome, cpf, funcao, departamento, salario, admissao, dia_pagamento FROM funcionarios WHERE id = %s"
-        resultado = self.db_manager.execute_query(sql, (self.funcionario_id,))
-        if resultado:
-            colunas = ["nome", "cpf", "funcao", "departamento", "salario", "admissao", "dia_pagamento"]
-            self.dados_funcionario = dict(zip(colunas, resultado[0]))
-    def setup_styles(self):
-        style = ttk.Style(self)
-        style.theme_use('clam'); style.configure('Portal.TFrame', background="#ecf0f1"); style.configure('Header.TLabel', background="#ecf0f1", foreground="#34495e", font=('Arial', 22, 'bold')); style.configure('Info.TLabel', background="#ecf0f1", foreground="#2c50", font=('Arial', 12)); style.configure('Value.TLabel', background="#ecf0f1", foreground="#2980b9", font=('Arial', 12, 'bold')); style.configure('TNotebook.Tab', font=('Arial', 11, 'bold'))
-    def create_tabs(self):
-        notebook = ttk.Notebook(self); notebook.pack(fill="both", expand=True, padx=10, pady=10)
-        self.tab_resumo = ttk.Frame(notebook, style='Portal.TFrame', padding=30); self.tab_holerites = ttk.Frame(notebook, style='Portal.TFrame', padding=30)
-        notebook.add(self.tab_resumo, text=" Meu Resumo "); notebook.add(self.tab_holerites, text=" Meus Holerites ")
-        self.create_resumo_widgets(self.tab_resumo); self.create_holerites_widgets(self.tab_holerites)
-    def create_resumo_widgets(self, parent_frame):
-        nome_curto = self.dados_funcionario.get('nome', '').split(' ')[0]; header_label = ttk.Label(parent_frame, text=f"Olá, {nome_curto}!", style='Header.TLabel'); header_label.pack(anchor='w', pady=(0, 30))
-        self.criar_info_section(parent_frame, "Suas Informações"); self.criar_info_row(self.info_frame, "Nome Completo:", self.dados_funcionario.get('nome')); self.criar_info_row(self.info_frame, "CPF:", self.formatar_cpf(self.dados_funcionario.get('cpf')))
-        self.criar_info_section(parent_frame, "Dados do Contrato"); self.criar_info_row(self.contract_frame, "Função/Cargo:", self.dados_funcionario.get('funcao')); self.criar_info_row(self.contract_frame, "Departamento:", self.dados_funcionario.get('departamento')); self.criar_info_row(self.contract_frame, "Data de Admissão:", self.formatar_data(self.dados_funcionario.get('admissao')))
-        self.criar_info_section(parent_frame, "Financeiro"); self.criar_info_row(self.finance_frame, "Salário Bruto:", self.formatar_salario(self.dados_funcionario.get('salario'))); self.criar_info_row(self.finance_frame, "Próximo Pagamento:", self.calcular_proximo_pagamento())
     def criar_info_section(self, parent, title):
         section_frame = ttk.Frame(parent, style='Portal.TFrame'); section_frame.pack(fill='x', pady=(10, 20)); title_label = ttk.Label(section_frame, text=title, font=('Arial', 16, 'bold'), background="#ecf0f1", foreground="#34495e"); title_label.pack(anchor='w', pady=(0, 10))
         if title == "Suas Informações": self.info_frame = section_frame
