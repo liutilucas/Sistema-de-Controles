@@ -1,14 +1,20 @@
+# Arquivo: views/view_menu_principal.py (Com novo botão para Folha de Pagamento)
+
 import tkinter as tk
 from tkinter import ttk, messagebox
+
+# Importa as classes dos módulos
 from views.view_funcionarios import FuncionarioApp
 from views.view_estoque import EstoqueApp
+from views.view_gerar_folha import GerarFolhaApp # <-- NOVA IMPORTAÇÃO
 
 class MainMenuApp(tk.Toplevel):
     def __init__(self, master, db_manager):
+        # ... (o __init__ continua igual) ...
         super().__init__(master)
         self.db_manager = db_manager
         self.title("Sistema de Gestão - Painel de Controle (Admin)")
-        self.geometry("800x450")
+        self.geometry("800x550") # Aumentei um pouco a altura
         self.configure(bg="#34495e")
         self.transient(master)
         self.setup_styles()
@@ -16,6 +22,7 @@ class MainMenuApp(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.destroy)
 
     def setup_styles(self):
+        # ... (esta função continua igual) ...
         self.style = ttk.Style(self)
         self.style.theme_use('clam')
         self.style.configure('Main.TFrame', background=self.cget('bg'))
@@ -34,14 +41,23 @@ class MainMenuApp(tk.Toplevel):
                                bg=self.cget('bg'), 
                                fg="#ecf0f1")
         title_label.pack(pady=(20, 50))
+
         btn_funcionarios = ttk.Button(main_frame, text="Gerenciar Funcionários", 
                                       style='Menu.TButton', 
                                       command=self.abrir_gestao_funcionarios)
         btn_funcionarios.pack(fill="x", pady=10)
+
         btn_estoque = ttk.Button(main_frame, text="Gerenciar Estoque", 
                                  style='Menu.TButton', 
                                  command=self.abrir_gestao_estoque)
         btn_estoque.pack(fill="x", pady=10)
+        
+        # ***** NOVO BOTÃO ADICIONADO AQUI *****
+        btn_gerar_folha = ttk.Button(main_frame, text="Gerar Folha de Pagamento", 
+                                     style='Menu.TButton', 
+                                     command=self.abrir_gerador_folha)
+        btn_gerar_folha.pack(fill="x", pady=10)
+
 
     def abrir_gestao_funcionarios(self):
         win_funcionarios = FuncionarioApp(self, self.db_manager)
@@ -50,3 +66,9 @@ class MainMenuApp(tk.Toplevel):
     def abrir_gestao_estoque(self):
         win_estoque = EstoqueApp(self, self.db_manager)
         win_estoque.grab_set()
+        
+    # ***** NOVA FUNÇÃO ADICIONADA AQUI *****
+    def abrir_gerador_folha(self):
+        """Abre a nova janela de geração de folha de pagamento."""
+        win_gerar_folha = GerarFolhaApp(self, self.db_manager)
+        win_gerar_folha.grab_set()

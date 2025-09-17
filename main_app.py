@@ -108,7 +108,10 @@ class AppController(tk.Tk):
             main_menu.grab_set()
         
         elif tipo_usuario == 'funcionario':
-            messagebox.showinfo("Login Efetuado", f"Bem-vindo, Funcionário!\nSeu ID é: {funcionario_id}\n\nO seu portal aparecerá aqui.")
+                    # A linha da messagebox foi REMOVIDA
+                    from views.view_portal_funcionario import PortalFuncionarioApp
+                    portal = PortalFuncionarioApp(self, self.db_manager, funcionario_id)
+                    portal.grab_set()
 
 if __name__ == "__main__":
     db_manager = Database() 
@@ -118,3 +121,5 @@ if __name__ == "__main__":
         app = AppController(db_manager)
         app.mainloop()
         db_manager.close_connection()
+
+        #90909090909
